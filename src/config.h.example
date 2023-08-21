@@ -1,0 +1,58 @@
+// clang-format off
+#include <Arduino.h>
+
+// Wifi
+const char *CONFIG_WIFI_SSID = "my_wifi";
+const char *CONFIG_WIFI_PASSWORD = "my_wifi_password";
+
+// Time
+const char *CONFIG_NTP_SERVER = "pool.ntp.org";
+const int CONFIG_GMT_OFFSET_SEC = 10 * 60 * 60;  // UTC +10 Timezone
+const int CONFIG_DAYLIGHT_OFFSET_SEC = 3600;
+
+// Home Assistant
+String CONFIG_HOME_ASSISTANT_URL = "http://10.0.0.1:8123";
+String CONFIG_HOME_ASSISTANT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ.eyJpc3MiOiJlNmY2MmQ3MDcxMjU0MWUyOWUxMzI4ZGEyYzhmNzUwZCIsImlhdCI6MTY5MTM2MTQwOSwiZXhwIjoyMDA2NzINDA5fQ.fmeX-mUURsMJnB3GIJ_NEEmoYthjyW-RBmzjOTY0vQE";
+String CONFIG_HOME_ASSISTANT_HOOK_ON = "-yuj8XlY8Fd7f7n8VICJsFFVQ";
+String CONFIG_HOME_ASSISTANT_HOOK_OFF = "-hdM4avXcof2HrRO3fqBg_V9q";
+
+// ESP32
+const int CONFIG_PIN_MOTION = 27;
+
+// Delay before lights off (ms)
+unsigned long CONFIG_SLEEP_DELAY = 5000;
+
+// Delay before turning off LCD on ESP sensor when motion is first
+// detected (ms)
+unsigned long CONFIG_LCD_SLEEP = 5000;
+
+// Display
+// The following is used by TFT_eSPI library the values may need to be
+// changed depending on the display hardware. 
+//
+// To find the correct values for your display, search through the
+// "User_Setups" folder in the TFT_eSPI repo.
+// https://github.com/Bodmer/TFT_eSPI/tree/master/User_Setups
+#define USER_SETUP_LOADED 1
+#define ST7789_DRIVER
+#define TFT_SDA_READ
+#define TFT_WIDTH 135
+#define TFT_HEIGHT 240
+#define CGRAM_OFFSET 1
+#define TFT_MOSI 19
+#define TFT_SCLK 18
+#define TFT_CS 5
+#define TFT_DC 16
+#define TFT_RST 23
+#define TFT_BL 4
+#define TFT_BACKLIGHT_ON HIGH
+#define LOAD_GLCD
+#define LOAD_FONT2
+#define LOAD_FONT4
+#define LOAD_FONT6
+#define LOAD_FONT7
+#define LOAD_FONT8
+#define LOAD_GFXFF
+#define SMOOTH_FONT
+#define SPI_FREQUENCY 40000000
+#define SPI_READ_FREQUENCY 6000000
