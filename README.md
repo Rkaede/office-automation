@@ -49,7 +49,8 @@ The sensitivity of the mmWave sensor can be configured over bluetooth by using t
 2. Update the config.
    1. Rename `config.example.h` to `config.h`.
    1. Update the values.
-3. Build and upload the code to the ESP32.
+3. Update the TFT settings in `platformio.ini`.
+4. Build and upload the code to the ESP32.
    1. Connect the ESP32 to your computer via USB.
    1. In VSCode, run the "PlatformIO: Upload" command.
 
