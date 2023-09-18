@@ -19,12 +19,15 @@ unsigned long last_motion;  // Keep track of last time motion was detected
 // The first timestamp when motion is detected (for the CONFIG_LCD_SLEEP)
 unsigned long first_detection_time;
 
-// 0 Initialization
-// 1 Motion Detected (lights on)
-// 2 Motion Detected
-// 3 No Motion
-// 4 TFT Screensaver On
-int state = 0;
+enum MotionState {
+    INITIALIZATION,
+    MOTION_DETECTED_LIGHTS_ON,
+    MOTION_DETECTED,
+    NO_MOTION,
+    TFT_SCREENSAVER_ON
+};
+
+MotionState state = INITIALIZATION;
 
 volatile int motion_state;
 boolean detect_motion = true;  // Motion is detected
@@ -43,14 +46,14 @@ void draw_screen() {
     img.setTextSize(2);
 
     switch (state) {
-        case 0:
+        case INITIALIZATION:
             break;
-        case 1:
+        case MOTION_DETECTED_LIGHTS_ON:
             draw_border(TFT_GREEN);
             img.setTextDatum(MC_DATUM);
             img.drawString("Motion Detected", 240 / 2, 135 / 2);
             break;
-        case 2:
+        case MOTION_DETECTED:
             struct tm timeinfo;
             if (!getLocalTime(&timeinfo)) {
                 Serial.println("Failed to obtain time");
@@ -66,7 +69,7 @@ void draw_screen() {
             img.setCursor(15, 75);
             img.println(&timeinfo, "%I:%M %p");
             break;
-        case 3:
+        case NO_MOTION:
             draw_border(TFT_YELLOW);
             img.setCursor(15, 10);
             img.println("No Motion");
@@ -76,7 +79,7 @@ void draw_screen() {
             img.setCursor(15, 75);
             img.println((last_motion + CONFIG_SLEEP_DELAY - millis()) / 1000 + 1);
             break;
-        case 4:
+        case TFT_SCREENSAVER_ON:
             draw_border(TFT_RED);
             img.setCursor(15, 10);
             img.println("Screensaver On");
@@ -87,8 +90,9 @@ void draw_screen() {
     img.pushSprite(0, 0);
 }
 
-// action | 0 lights ON | 1 lights OFF
-void rest_api_action(int action) {
+enum LightAction { LIGHTS_ON, LIGHTS_OFF };
+
+void rest_api_action(LightAction action) {
     WiFiClient client;
     HTTPClient http;
     int httpResponseCode;
@@ -104,7 +108,7 @@ void rest_api_action(int action) {
     }
 
     switch (action) {
-        case 0:  // lights on
+        case LIGHTS_ON:
             Serial.println("Sending Lights ON Request");
             url = CONFIG_HOME_ASSISTANT_URL + "/api/webhook/" + CONFIG_HOME_ASSISTANT_HOOK_ON;
             http.begin(client, url);
@@ -112,7 +116,7 @@ void rest_api_action(int action) {
             http.addHeader("Content-Type", "application/json");
             httpResponseCode = http.POST("{}");
             break;
-        case 1:  // lights off
+        case LIGHTS_OFF:
             Serial.println("Sending Lights OFF Request");
             url = CONFIG_HOME_ASSISTANT_URL + "/api/webhook/" + CONFIG_HOME_ASSISTANT_HOOK_OFF;
             http.begin(client, url);
@@ -184,29 +188,30 @@ void loop() {
     }
 
     if (!detect_motion && (millis() - last_motion >= CONFIG_SLEEP_DELAY)) {
-        if (state != 4) {
+        if (state != TFT_SCREENSAVER_ON) {
             Serial.println("Turning Screensaver On");
-            state = 4;
-            rest_api_action(1);
+            state = TFT_SCREENSAVER_ON;
+            rest_api_action(LIGHTS_OFF);
         }
         draw_screen();
     } else {
         if (detect_motion) {
             // Not already in a motion detected state
-            if (state != 1 && state != 2) {
+            if (state != MOTION_DETECTED_LIGHTS_ON && state != MOTION_DETECTED) {
                 Serial.println("Motion Detected");
-                state = 1;
+                state = MOTION_DETECTED_LIGHTS_ON;
                 first_detection_time = millis();
-                rest_api_action(0);
+                rest_api_action(LIGHTS_ON);
             }
-            if (state == 1 && (millis() - first_detection_time >= CONFIG_LCD_SLEEP)) {
-                state = 2;
+            if (state == MOTION_DETECTED_LIGHTS_ON &&
+                (millis() - first_detection_time >= CONFIG_LCD_SLEEP)) {
+                state = MOTION_DETECTED;
             }
             draw_screen();
         } else {
             // No longer detecting motion but it hasn't been long
             // enough to go to TFT Screensaver.
-            state = 3;
+            state = NO_MOTION;
             draw_screen();
         }
     }
