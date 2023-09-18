@@ -9,8 +9,11 @@
 #include "config.h"
 #include "time.h"
 
+const uint16_t SCREEN_WIDTH = 240;
+const uint16_t SCREEN_HEIGHT = 135;
+
 // load TFT libraries
-TFT_eSPI tft = TFT_eSPI(135, 240);
+TFT_eSPI tft = TFT_eSPI(SCREEN_HEIGHT, SCREEN_WIDTH);
 TFT_eSprite img = TFT_eSprite(&tft);
 
 // STATE
@@ -90,6 +93,24 @@ void draw_screen() {
     img.pushSprite(0, 0);
 }
 
+void connectToWiFi() {
+    WiFi.persistent(true);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);
+    tft.println("Connecting to WiFi");
+    int connectTime = millis();
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(200);
+        tft.print(".");
+        if (millis() - connectTime >= 5000) {
+            ESP.restart();
+        }
+    }
+    tft.println("IP Address: ");
+    IPAddress ip = WiFi.localIP();
+    tft.println(ip);
+}
+
 enum LightAction { LIGHTS_ON, LIGHTS_OFF };
 
 void rest_api_action(LightAction action) {
@@ -139,7 +160,7 @@ void setup() {
     Serial.println("Start");
 
     tft.init();
-    img.createSprite(240, 135);
+    img.createSprite(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     tft.setRotation(1);
     tft.fillScreen(TFT_WHITE);
@@ -148,23 +169,7 @@ void setup() {
 
     tft.println("Booting...");
 
-    WiFi.persistent(true);
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);
-    tft.println("Connecting to WiFi");
-    int connectTime = millis();
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(200);
-        tft.print(".");
-        if (millis() - connectTime >= 5000) {  // On the rare occasion it gets stuck trying to
-                                               // connect, a reboot fixes it.
-            ESP.restart();
-        }
-    }
-
-    tft.println("IP Address: ");
-    IPAddress ip = WiFi.localIP();
-    tft.println(ip);
+    connectToWiFi();
 
     // init and get the time
     tft.println("Setting up Time Server");
@@ -193,7 +198,6 @@ void loop() {
             state = TFT_SCREENSAVER_ON;
             rest_api_action(LIGHTS_OFF);
         }
-        draw_screen();
     } else {
         if (detect_motion) {
             // Not already in a motion detected state
@@ -207,12 +211,11 @@ void loop() {
                 (millis() - first_detection_time >= CONFIG_LCD_SLEEP)) {
                 state = MOTION_DETECTED;
             }
-            draw_screen();
         } else {
             // No longer detecting motion but it hasn't been long
             // enough to go to TFT Screensaver.
             state = NO_MOTION;
-            draw_screen();
         }
     }
+    draw_screen();
 }
